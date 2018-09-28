@@ -71,7 +71,7 @@ source_to_xenia = [
 
 def main():
   parser = optparse.OptionParser()
-  parser.add_option("--INIFile", dest="ini_file",
+  parser.add_option("--ConfigFile", dest="ini_file",
                     help="Configuration file" )
   parser.add_option("--StartDate", dest="start_date",
                     help="Optional starting date/time to use for query" )
