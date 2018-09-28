@@ -10,7 +10,7 @@ if [ ! -f /tmp/lock_populate_xenia_cormp ]; then
 
   cd /home/xeniaprod/scripts/CormpDataIngest
 
-  python /home/xeniaprod/scripts/CormpDataIngest/CORMPDataIngestion.py --ConfigFile=/home/xeniaprod/config/cormp_ingest.ini
+  python /home/xeniaprod/scripts/CormpDataIngest/CORMPDataIngestion.py --ConfigFile=/home/xeniaprod/config/cormp_ingest.ini >> /home/xeniaprod/tmp/log/populate_xenia_cormp.log 2>&1
   rm -f /tmp/lock_populate_xenia_cormp
 
   startTime=`date -u`
