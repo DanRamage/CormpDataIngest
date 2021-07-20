@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /usr/local/virtualenv/pyenv-2.7.11/bin/activate
+source /usr/local/virtualenv/pyenv-3.8.5/bin/activate
 
 if [ ! -f /tmp/lock_populate_xenia_cormp ]; then
   touch /tmp/lock_populate_xenia_cormp
