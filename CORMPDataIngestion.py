@@ -7,14 +7,20 @@ import time
 import logging.config
 from multiprocessing import Queue, Event, Process
 
-from multi_process_logging import MainLogConfig, ClientLogConfig, queue_listener_process
+from multi_process_logging import MainLogConfig
 from MultiProcDataSaver import MPDataSaver
 from xeniaSQLAlchemy import xeniaAlchemy, multi_obs, platform
 from xenia_obs_map import obs_map, json_obs_map
 from unitsConversion import uomconversionFunctions
 
 import optparse
-import ConfigParser
+if sys.version_info[0] < 3:
+  import ConfigParser
+else:
+  import configparser as ConfigParser
+
+
+
 
 source_to_xenia = [
   {
@@ -81,21 +87,21 @@ def main():
 
   config_file = ConfigParser.RawConfigParser()
   config_file.read(options.ini_file)
-  logging_queue = Queue()
+  #logging_queue = Queue()
   log_file = config_file.get('logging', 'config_file')
-  log_conf =MainLogConfig(logging_queue, log_file)
-  log_stop_event = Event()
   logger_name = 'CORMPProcessing'
+  log_conf =MainLogConfig(log_file, logger_name)
+  log_conf.setup_logging()
+  '''
+  log_stop_event = Event()
   log_listener = Process(target=queue_listener_process,
-                         name='listener',
-                         kwargs=({'log_queue':logging_queue,
-                                'stop_event': log_stop_event,
-                                'dict_config': log_conf.config_dict(),
-                                'logger_name': logger_name}))
-  log_listener.start()
+                             name='listener',
+                             args=(logging_queue, log_stop_event, log_conf.config_dict(), logger_name))
 
+  log_listener.start()
   client_log = ClientLogConfig(logging_queue)
   logging.config.dictConfig(client_log.config_dict())
+  '''
 
   logger = logging.getLogger(logger_name)
   logger.info("Log file opened.")
@@ -123,7 +129,8 @@ def main():
     logger.exception(e)
   else:
     data_queue = Queue()
-    data_saver = MPDataSaver(data_queue, logging_queue, db_settings_ini)
+    data_saver = MPDataSaver(data_queue, log_conf.logging_queue, db_settings_ini)
+    #data_saver = MPDataSaver(data_queue, logging_queue, db_settings_ini)
     data_saver.start()
 
     end_time = datetime.utcnow()
@@ -149,6 +156,9 @@ def main():
       url = base_url.format(platform_name=platform_parts[1].lower(),start_time=start_time.strftime('%Y-%m-%d %H:%M:%S'), end_time=end_time.strftime('%Y-%m-%d %H:%M:%S'))
 
       try:
+        logger.debug("Querying platform: %s Start: %s End: %s" % (platform_parts[1].lower(),
+                                                                 start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                                                                 end_time.strftime('%Y-%m-%d %H:%M:%S')))
         req = requests.get(url)
         if req.status_code == 200:
           time_series = req.json()
@@ -187,8 +197,9 @@ def main():
   data_saver.join()
 
   logger.info("Closing log file.")
-  log_stop_event.set()
-  log_listener.join()
+  log_conf.shutdown_logging()
+  #log_stop_event.set()
+  #log_listener.join()
 
   return
 if __name__ == "__main__":
